@@ -1,0 +1,36 @@
+{
+  "name": "hyclicker",
+  "productName": "HyClicker",
+  "version": "1.0.0",
+  "description": "HyClicker rebuilt with HTML + CSS + JS (Electron)",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win portable"
+  },
+  "dependencies": {
+    "@nut-tree-fork/nut-js": "^4.0.0"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.hyclicker.app",
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "renderer/**/*",
+      "assets/**/*"
+    ]
+  },
+  "allowScripts": {
+    "electron@33.4.11": true
+  }
+}

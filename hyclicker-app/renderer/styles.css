@@ -1,0 +1,87 @@
+:root {
+  --bg: #191919;
+  --pill: #242424;
+  --pill-hover: #2a2a2a;
+  --pill-focus: #2e2e2e;
+  --text: #ffffff;
+  --muted: #3a3a3a;
+  --yellow: #f0d155;
+  --yellow-hover: #fae07a;
+  --red: #e34f4f;
+  --red-hover: #f06c6c;
+  --divider: #303030;
+  --green: #00bf63;
+  --green-hover: #02d66f;
+  --green-pressed: #00a855;
+  --stop: #e34f4f;
+  --stop-hover: #f06c6c;
+  --stop-pressed: #c73838;
+}
+/* GPU-composited rounding: no jagged canvas polygons */
+* { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+html, body { width: 342px; height: 382px; background: transparent; overflow: hidden;
+  font-family: "Segoe UI", Bahnschrift, Arial, sans-serif; }
+.window {
+  width: 342px; height: 382px; background: var(--bg); border-radius: 26px;
+  position: relative; overflow: hidden;
+}
+header {
+  height: 68px; display: flex; align-items: center; justify-content: space-between;
+  padding: 0 17px 0 16px; border-bottom: 2px dotted var(--divider);
+  -webkit-app-region: drag;
+}
+header h1 { color: var(--text); font-size: 30px; font-weight: 500; letter-spacing: .2px; }
+.traffic { display: flex; gap: 12px; align-items: center; -webkit-app-region: no-drag; }
+.dot { width: 25px; height: 25px; border-radius: 50%; cursor: pointer; border: none;
+  transition: transform .16s ease, box-shadow .16s ease; }
+.dot.yellow { background: var(--yellow); }
+.dot.yellow:hover { transform: scale(1.14); box-shadow: 0 2px 10px rgba(0,0,0,.45); }
+.dot.yellow:active { transform: scale(.94); }
+.dot.red { background: var(--red); }
+.dot.red:hover { transform: scale(1.14); box-shadow: 0 2px 10px rgba(0,0,0,.45); }
+.dot.red:active { transform: scale(.94); }
+main { padding: 14px 16px 0 16px; text-align: center; }
+.cps-row { display: flex; justify-content: center; gap: 14px; }
+.cps-col label { display: block; color: var(--text); font-size: 19px; margin-bottom: 8px; }
+.pill {
+  background: var(--pill); border: none; border-radius: 23px; color: var(--text);
+  height: 46px; display: flex; align-items: center; justify-content: center;
+  font-size: 24px; outline: none; transition: transform .16s ease, box-shadow .16s ease;
+}
+.pill-input { width: 111px; }
+.pill-input input {
+  width: 100%; background: transparent; border: none; outline: none; text-align: center;
+  color: var(--text); font-size: 24px; font-family: inherit; -webkit-app-region: no-drag;
+}
+.pill-input input::placeholder { color: var(--muted); }
+.keybind-label { color: var(--text); font-size: 19px; margin: 12px 0 8px 0; }
+.keybind-pill { width: 116px; margin: 0 auto; cursor: pointer; font-size: 22px; color: var(--muted); }
+.keybind-pill:hover { transform: translateY(-1px) scale(1.04); box-shadow: 0 4px 14px rgba(0,0,0,.4); }
+.keybind-pill:active { transform: scale(.97); box-shadow: none; }
+.keybind-pill.capturing { background: var(--pill-focus); color: var(--text); transform: scale(1.04); }
+.toast { height: 20px; margin-top: 6px; font-size: 11px; color: var(--red); min-height: 20px; }
+.start-btn {
+  width: 112px; height: 46px; border-radius: 23px; border: none; cursor: pointer;
+  background: var(--green); color: #fff; font-size: 22px; margin: 8px auto 0 auto;
+  display: block; transition: transform .16s ease, box-shadow .16s ease; font-family: inherit;
+}
+.start-btn:hover { transform: translateY(-1px) scale(1.05); box-shadow: 0 6px 18px rgba(0,0,0,.45); }
+.start-btn:active { transform: scale(.96); box-shadow: none; }
+.start-btn.stop { background: var(--stop); }
+footer { position: absolute; bottom: 12px; left: 0; right: 0; display: flex;
+  justify-content: space-between; align-items: center; padding: 0 14px; }
+.github {
+  width: 38px; height: 38px; border-radius: 50%; background: #000; border: none;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+.github:hover { transform: scale(1.12) rotate(-6deg); box-shadow: 0 4px 14px rgba(0,0,0,.5); }
+.github:active { transform: scale(.94); box-shadow: none; }
+.github svg { width: 26px; height: 26px; fill: #fff; }
+.mouse-pill {
+  width: 64px; height: 26px; border-radius: 13px; background: var(--pill); color: var(--muted);
+  border: none; cursor: pointer; font-size: 15px; font-family: inherit;
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+.mouse-pill:hover { transform: translateY(-1px) scale(1.06); box-shadow: 0 4px 12px rgba(0,0,0,.4); }
+.mouse-pill:active { transform: scale(.95); box-shadow: none; }

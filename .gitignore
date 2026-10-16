@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+venv/
+build/
+
+# PyInstaller output (rebuilt via HyClicker.spec)
+dist/
+
+# Electron
+hyclicker-app/node_modules/
+hyclicker-app/dist/
+
+# Runtime configs (generated on first run)
+hyclicker_config.json
+novum_config.json
+
+# Logs
+*.log
