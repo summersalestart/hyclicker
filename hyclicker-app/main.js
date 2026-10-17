@@ -5,7 +5,7 @@ const https = require("https");
 
 const REPO = "summersalestart/hyclicker";
 
-// ---- self-updater (portable-friendly, GitHub Releases based) ----
+// ---- update check (GitHub Releases based, no in-place patching) ----
 function fetchJson(url) {
   return new Promise((resolve, reject) => {
     https.get(url, { headers: { "User-Agent": "HyClicker-Updater" } }, (res) => {
@@ -19,23 +19,6 @@ function fetchJson(url) {
   });
 }
 
-function downloadFile(url, dest) {
-  return new Promise((resolve, reject) => {
-    const follow = (u) => {
-      https.get(u, { headers: { "User-Agent": "HyClicker-Updater" } }, (res) => {
-        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location)
-          return follow(res.headers.location);
-        if (res.statusCode !== 200) return reject(new Error(`HTTP ${res.statusCode}`));
-        const out = fs.createWriteStream(dest);
-        res.pipe(out);
-        out.on("finish", () => out.close(resolve));
-        out.on("error", reject);
-      }).on("error", reject);
-    };
-    follow(url);
-  });
-}
-
 function versionOf(tag) {
   return String(tag || "").replace(/^v/, "").trim();
 }
@@ -45,47 +28,21 @@ function isNewer(candidate, current) {
   return false;
 }
 
-let updateInfo = null; // { version, assetUrl }
+let latestVersion = null;
 
 async function checkForUpdate() {
-  // never self-update in dev mode: process.execPath would be electron.exe
+  // dev mode: process.execPath is electron.exe, skip entirely
   if (!app.isPackaged) return null;
   try {
     const rel = await fetchJson(`https://api.github.com/repos/${REPO}/releases/latest`);
     const v = versionOf(rel.tag_name);
     if (!v || !isNewer(v, app.getVersion())) return null;
-    const asset = (rel.assets || []).find((a) => /HyClicker(\s*\(1\))?\.exe$/i.test(a.name) || /^HyClicker.*\.exe$/i.test(a.name));
-    if (!asset) return null;
-    updateInfo = { version: v, assetUrl: asset.browser_download_url };
+    latestVersion = v;
     win?.webContents.send("update-available", v);
-    return updateInfo;
+    return v;
   } catch {
     return null; // offline / rate-limited: stay silent
   }
-}
-
-function applyUpdate() {
-  if (!updateInfo) return;
-  const exe = process.execPath;
-  const exeDir = path.dirname(exe);
-  const newFile = path.join(exeDir, "HyClicker-new.exe");
-  const oldFile = path.join(exeDir, "HyClicker-old.exe");
-  win?.webContents.send("update-progress", "Downloading...");
-  downloadFile(updateInfo.assetUrl, newFile)
-    .then(() => {
-      // rename running exe (allowed on Windows), move new into place, relaunch
-      const { spawn } = require("child_process");
-      fs.renameSync(exe, oldFile);
-      fs.renameSync(newFile, exe);
-      spawn("cmd", ["/c", `timeout /t 2 /nobreak >nul & start "" "${exe}" & del /q "${oldFile}"`], {
-        detached: true, stdio: "ignore", windowsHide: true,
-      }).unref();
-      app.quit();
-    })
-    .catch(() => {
-      try { fs.unlinkSync(newFile); } catch {}
-      win?.webContents.send("update-progress", "Update failed");
-    });
 }
 
 let win = null;
@@ -238,4 +195,6 @@ ipcMain.handle("open-github", () => shell.openExternal("https://github.com/summe
 ipcMain.handle("load-config", () => loadConfig());
 ipcMain.handle("save-config", (_e, patch) => saveConfig(patch));
 ipcMain.handle("get-version", () => app.getVersion());
-ipcMain.handle("apply-update", () => applyUpdate());
+ipcMain.handle("open-releases", () =>
+  shell.openExternal(`https://github.com/${REPO}/releases/latest`)
+);

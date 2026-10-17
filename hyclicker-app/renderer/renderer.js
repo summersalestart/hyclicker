@@ -120,15 +120,12 @@ mouseBtn.addEventListener("click", () => {
   })
 );
 
-// ---- self-updater ----
+// ---- update notice: opens GitHub releases page ----
 const updateBar = $("updateBar"), updateBtn = $("updateBtn"), updateText = $("updateText");
 api.onUpdateAvailable((v) => {
   updateText.textContent = `Update available (v${v})`;
+  updateBtn.textContent = "Get it";
   updateBar.hidden = false;
 });
-api.onUpdateProgress((msg) => {
-  if (msg === "Update failed") { updateText.textContent = msg; updateBtn.disabled = true; }
-  else updateBtn.textContent = msg;
-});
-updateBtn.addEventListener("click", () => api.applyUpdate());
+updateBtn.addEventListener("click", () => api.openReleases());
 api.getVersion().then((v) => { if (v) document.title = `HyClicker v${v}`; }).catch(() => {});

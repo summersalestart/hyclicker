@@ -13,7 +13,6 @@ contextBridge.exposeInMainWorld("hyclicker", {
   onState: (cb) => ipcRenderer.on("clicker-state", (_e, v) => cb(v)),
   onRequestToggle: (cb) => ipcRenderer.on("request-toggle", () => cb()),
   onUpdateAvailable: (cb) => ipcRenderer.on("update-available", (_e, v) => cb(v)),
-  onUpdateProgress: (cb) => ipcRenderer.on("update-progress", (_e, msg) => cb(msg)),
   getVersion: () => ipcRenderer.invoke("get-version"),
-  applyUpdate: () => ipcRenderer.invoke("apply-update"),
+  openReleases: () => ipcRenderer.invoke("open-releases"),
 });
