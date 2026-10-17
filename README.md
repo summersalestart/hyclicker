@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="banner-dark.png" alt="HyClicker">
+  <img src="banner.png" alt="HyClicker">
 </div>
 
 # HyClicker
