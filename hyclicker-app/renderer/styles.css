@@ -64,6 +64,7 @@ main { padding: 14px 16px 0 16px; text-align: center; }
   margin: 6px auto 0 auto; display: flex; align-items: center; gap: 8px; justify-content: center;
   font-size: 12px; color: var(--text);
 }
+.update-bar[hidden] { display: none; }
 .update-btn {
   background: var(--pill-focus); color: var(--text); border: none; border-radius: 12px;
   height: 24px; padding: 0 12px; font-size: 11px; cursor: pointer; font-family: inherit;
@@ -80,11 +81,13 @@ main { padding: 14px 16px 0 16px; text-align: center; }
 .start-btn:active { transform: scale(.96); box-shadow: none; }
 .start-btn.stop { background: var(--stop); }
 footer { position: absolute; bottom: 12px; left: 0; right: 0; display: flex;
-  justify-content: space-between; align-items: center; padding: 0 14px; }
+  justify-content: space-between; align-items: center; padding: 0 14px;
+  pointer-events: none; }
 .github {
   width: 38px; height: 38px; border-radius: 50%; background: #000; border: none;
   cursor: pointer; display: flex; align-items: center; justify-content: center;
   transition: transform .16s ease, box-shadow .16s ease;
+  pointer-events: auto;
 }
 .github:hover { transform: scale(1.12) rotate(-6deg); box-shadow: 0 4px 14px rgba(0,0,0,.5); }
 .github:active { transform: scale(.94); box-shadow: none; }
@@ -93,6 +96,7 @@ footer { position: absolute; bottom: 12px; left: 0; right: 0; display: flex;
   width: 64px; height: 26px; border-radius: 13px; background: var(--pill); color: var(--muted);
   border: none; cursor: pointer; font-size: 15px; font-family: inherit;
   transition: transform .16s ease, box-shadow .16s ease;
+  pointer-events: auto;
 }
 .mouse-pill:hover { transform: translateY(-1px) scale(1.06); box-shadow: 0 4px 12px rgba(0,0,0,.4); }
 .mouse-pill:active { transform: scale(.95); box-shadow: none; }

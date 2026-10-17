@@ -48,6 +48,8 @@ function isNewer(candidate, current) {
 let updateInfo = null; // { version, assetUrl }
 
 async function checkForUpdate() {
+  // never self-update in dev mode: process.execPath would be electron.exe
+  if (!app.isPackaged) return null;
   try {
     const rel = await fetchJson(`https://api.github.com/repos/${REPO}/releases/latest`);
     const v = versionOf(rel.tag_name);
