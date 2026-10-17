@@ -3,6 +3,7 @@
   "productName": "HyClicker",
   "version": "1.0.0",
   "description": "HyClicker rebuilt with HTML + CSS + JS (Electron)",
+  "author": "summersalestart",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
