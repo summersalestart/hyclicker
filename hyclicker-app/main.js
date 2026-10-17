@@ -1,6 +1,90 @@
 const { app, BrowserWindow, ipcMain, globalShortcut, shell } = require("electron");
 const path = require("path");
 const fs = require("fs");
+const https = require("https");
+
+const REPO = "summersalestart/hyclicker";
+
+// ---- self-updater (portable-friendly, GitHub Releases based) ----
+function fetchJson(url) {
+  return new Promise((resolve, reject) => {
+    https.get(url, { headers: { "User-Agent": "HyClicker-Updater" } }, (res) => {
+      let data = "";
+      res.on("data", (c) => (data += c));
+      res.on("end", () => {
+        if (res.statusCode !== 200) return reject(new Error(`HTTP ${res.statusCode}`));
+        try { resolve(JSON.parse(data)); } catch (e) { reject(e); }
+      });
+    }).on("error", reject);
+  });
+}
+
+function downloadFile(url, dest) {
+  return new Promise((resolve, reject) => {
+    const follow = (u) => {
+      https.get(u, { headers: { "User-Agent": "HyClicker-Updater" } }, (res) => {
+        if (res.statusCode >= 300 && res.statusCode < 400 && res.headers.location)
+          return follow(res.headers.location);
+        if (res.statusCode !== 200) return reject(new Error(`HTTP ${res.statusCode}`));
+        const out = fs.createWriteStream(dest);
+        res.pipe(out);
+        out.on("finish", () => out.close(resolve));
+        out.on("error", reject);
+      }).on("error", reject);
+    };
+    follow(url);
+  });
+}
+
+function versionOf(tag) {
+  return String(tag || "").replace(/^v/, "").trim();
+}
+function isNewer(candidate, current) {
+  const c = candidate.split(".").map(Number), r = current.split(".").map(Number);
+  for (let i = 0; i < 3; i++) if ((c[i] || 0) !== (r[i] || 0)) return (c[i] || 0) > (r[i] || 0);
+  return false;
+}
+
+let updateInfo = null; // { version, assetUrl }
+
+async function checkForUpdate() {
+  try {
+    const rel = await fetchJson(`https://api.github.com/repos/${REPO}/releases/latest`);
+    const v = versionOf(rel.tag_name);
+    if (!v || !isNewer(v, app.getVersion())) return null;
+    const asset = (rel.assets || []).find((a) => /HyClicker(\s*\(1\))?\.exe$/i.test(a.name) || /^HyClicker.*\.exe$/i.test(a.name));
+    if (!asset) return null;
+    updateInfo = { version: v, assetUrl: asset.browser_download_url };
+    win?.webContents.send("update-available", v);
+    return updateInfo;
+  } catch {
+    return null; // offline / rate-limited: stay silent
+  }
+}
+
+function applyUpdate() {
+  if (!updateInfo) return;
+  const exe = process.execPath;
+  const exeDir = path.dirname(exe);
+  const newFile = path.join(exeDir, "HyClicker-new.exe");
+  const oldFile = path.join(exeDir, "HyClicker-old.exe");
+  win?.webContents.send("update-progress", "Downloading...");
+  downloadFile(updateInfo.assetUrl, newFile)
+    .then(() => {
+      // rename running exe (allowed on Windows), move new into place, relaunch
+      const { spawn } = require("child_process");
+      fs.renameSync(exe, oldFile);
+      fs.renameSync(newFile, exe);
+      spawn("cmd", ["/c", `timeout /t 2 /nobreak >nul & start "" "${exe}" & del /q "${oldFile}"`], {
+        detached: true, stdio: "ignore", windowsHide: true,
+      }).unref();
+      app.quit();
+    })
+    .catch(() => {
+      try { fs.unlinkSync(newFile); } catch {}
+      win?.webContents.send("update-progress", "Update failed");
+    });
+}
 
 let win = null;
 
@@ -121,6 +205,7 @@ function registerHotkey(accelerator) {
 app.whenReady().then(() => {
   createWindow();
   registerHotkey("F6");
+  win.webContents.on("did-finish-load", () => checkForUpdate());
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
@@ -150,3 +235,5 @@ ipcMain.handle("close", () => { stopClicking(); win?.close(); });
 ipcMain.handle("open-github", () => shell.openExternal("https://github.com/summersalestart/hyclicker"));
 ipcMain.handle("load-config", () => loadConfig());
 ipcMain.handle("save-config", (_e, patch) => saveConfig(patch));
+ipcMain.handle("get-version", () => app.getVersion());
+ipcMain.handle("apply-update", () => applyUpdate());

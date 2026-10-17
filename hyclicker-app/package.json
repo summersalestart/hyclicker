@@ -1,7 +1,7 @@
 {
   "name": "hyclicker",
   "productName": "HyClicker",
-  "version": "1.0.0",
+  "version": "1.2.0",
   "description": "HyClicker rebuilt with HTML + CSS + JS (Electron)",
   "author": "summersalestart",
   "main": "main.js",
@@ -23,6 +23,9 @@
         "portable"
       ],
       "icon": "assets/icon.ico"
+    },
+    "portable": {
+      "artifactName": "HyClicker.exe"
     },
     "files": [
       "main.js",

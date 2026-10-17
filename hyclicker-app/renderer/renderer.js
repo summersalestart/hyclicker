@@ -119,3 +119,16 @@ mouseBtn.addEventListener("click", () => {
     api.saveConfig({ cps1: cps1.value.trim(), cps2: cps2.value.trim() }).catch(() => {});
   })
 );
+
+// ---- self-updater ----
+const updateBar = $("updateBar"), updateBtn = $("updateBtn"), updateText = $("updateText");
+api.onUpdateAvailable((v) => {
+  updateText.textContent = `Update available (v${v})`;
+  updateBar.hidden = false;
+});
+api.onUpdateProgress((msg) => {
+  if (msg === "Update failed") { updateText.textContent = msg; updateBtn.disabled = true; }
+  else updateBtn.textContent = msg;
+});
+updateBtn.addEventListener("click", () => api.applyUpdate());
+api.getVersion().then((v) => { if (v) document.title = `HyClicker v${v}`; }).catch(() => {});
