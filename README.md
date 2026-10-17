@@ -2,6 +2,12 @@
   <img src="banner.png" alt="HyClicker">
 </div>
 
+[![Build](https://img.shields.io/github/actions/workflow/status/summersalestart/hyclicker/ci.yml?branch=main)](https://github.com/summersalestart/hyclicker/actions)
+[![Latest Release](https://img.shields.io/github/v/release/summersalestart/hyclicker)](https://github.com/summersalestart/hyclicker/releases/latest)
+[![Last Commit](https://img.shields.io/github/last-commit/summersalestart/hyclicker)](https://github.com/summersalestart/hyclicker/commits/main)
+[![Downloads](https://img.shields.io/github/downloads/summersalestart/hyclicker/total)](https://github.com/summersalestart/hyclicker/releases)
+[![Stars](https://img.shields.io/github/stars/summersalestart/hyclicker)](https://github.com/summersalestart/hyclicker/stargazers)
+
 # HyClicker
 
 Simple dark auto clicker for Windows. You give it a min/max CPS range and it clicks somewhere in between, drifting around so it doesn't look like a metronome. There's a global hotkey to toggle it even when the window isn't focused.
