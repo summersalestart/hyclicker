@@ -1,82 +1,67 @@
-# HyClicker — Auto Clicker
+<div align="center">
+  <img src="banner-dark.png" alt="HyClicker">
+</div>
 
-A compact, modern dark-themed auto-clicker utility with a naturalistic,
-varying click speed and a rebindable global hotkey.
+# HyClicker
 
-## Files
+Simple dark auto clicker for Windows. You give it a min/max CPS range and it clicks somewhere in between, drifting around so it doesn't look like a metronome. There's a global hotkey to toggle it even when the window isn't focused.
 
-| File                 | Purpose                                                        |
-|----------------------|-----------------------------------------------------------------|
-| `main.py`            | Entry point — creates the window and starts the app.           |
-| `gui.py`             | Custom Tkinter UI matching the minimalist dark design.         |
-| `engine.py`          | The click loop: naturalistic CPS timing, thread management.    |
-| `keybind_manager.py` | Global hotkey registration + "press a key to rebind" capture.  |
-| `theme.py`           | Colors, fonts, and geometric rounded curves.                    |
-| `config.py`          | Persistent JSON configuration loader and saver.                |
-| `requirements.txt`   | Third-party dependencies.                                       |
+This started as a tkinter thing (`main.py`, still works if that's your thing) and got rebuilt as an Electron app because tkinter's canvas has no anti-aliasing and the rounded corners looked like garbage. The Electron version is the one I actually use.
 
-The click-timing logic (`engine.py`) and hotkey logic (`keybind_manager.py`)
-have zero Tkinter dependencies — they can be reused with different interfaces
-or tested independently.
+## How the clicking works
 
-## 1. Installation
+It doesn't click at one fixed rate. Every 0.5–2 seconds it picks a new target CPS somewhere inside your min/max range, then fires clicks at that rate with a bit of jitter (±15%) thrown on top. Delays are clamped between 30ms and 500ms so nothing goes insane.
 
-Requires Python 3.8+.
+If you set min 8 / max 12, it'll wander around between 8 and 12 instead of sitting at one speed.
+
+## Usage
+
+- `CPS (1)` / `CPS (2)` — the range it drifts between (defaults: 8 and 12)
+- `Start` — obvious. There's a short delay after starting so your cursor isn't the thing being clicked.
+- `Keybind` — click it, press whatever key you want the toggle to be. F6 by default. Works globally.
+- `Left` — click to swap to Right mouse button
+- yellow dot minimizes, red dot quits, github cat is github
+
+## Running from source
+
+Python version (the original):
 
 ```bash
-python -m venv venv
-venv\Scripts\activate        # Windows
-# source venv/bin/activate   # macOS/Linux
-
 pip install -r requirements.txt
-```
-
-`tkinter` ships with the standard Python installer on Windows/macOS.
-On Linux you may need: `sudo apt-get install python3-tk`.
-
-No administrator/root privileges are required to run it.
-
-## 2. Running
-
-```bash
 python main.py
 ```
 
-- **CPS (1)** = minimum clicking speed (default 8).
-- **CPS (2)** = maximum clicking speed (default 12).
-- **Start / Stop** — toggles naturalistic auto-clicking.
-- **Keybind** — click it, then press any key to rebind the global toggle (default **F6**).
-- **GitHub Icon** — opens https://github.com/summersalestart/hyclicker in your browser.
-- **Left / Right** — toggles between Left and Right mouse button clicking.
-- **Yellow Dot** — minimizes the window.
-- **Red Dot** — closes the app cleanly.
+Electron version (the current one, under `hyclicker-app/`):
 
-The keybind works globally even when another game or window is active.
+```bash
+cd hyclicker-app
+npm install
+npm start
+```
 
-## 3. Building a Standalone .exe
+## Building
+
+Python exe:
 
 ```bash
 pip install pyinstaller
 pyinstaller HyClicker.spec
 ```
 
-The resulting executable will be in `dist/HyClicker.exe`.
-
-## 3b. HTML/CSS/JS Desktop Rebuild (Electron)
-
-`hyclicker-app/` is a pixel-faithful rebuild of the same UI with HTML + CSS + JS.
-All rounding uses CSS `border-radius` (GPU anti-aliased), and button hovers are
-motion-only (scale/lift/shadow, no color change).
+Electron exe:
 
 ```bash
 cd hyclicker-app
-npm install
-npm start        # run the app
-npm run dist     # portable .exe via electron-builder
+npm run dist
 ```
 
-## 4. Architecture & Timing System
+Both end up in their respective `dist/` folders.
 
-- **Phase-based CPS Variation**: Rather than uniform random delay, the engine shifts between subtle speed phases with human-like jitter (±15%), mimicking realistic clicking.
-- **Thread Safety**: The click engine runs on a daemon thread, leaving the UI perfectly responsive.
-- **Clean Teardown**: Listeners and threads terminate gracefully upon exit.
+## Releases / updates
+
+The exe checks the GitHub releases page on launch. If there's a newer version it'll show a little bar with a link to the releases page — it just opens the browser, it doesn't touch anything on disk. Download the new exe yourself like a normal person.
+
+## The usual disclaimers
+
+- This is unsigned, so SmartScreen might yell. The source is right here if you'd rather build it yourself.
+- A lot of games ban auto clickers. Read the ToS of whatever you're clicking on, that's on you, not me.
