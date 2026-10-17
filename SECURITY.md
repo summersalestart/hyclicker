@@ -39,4 +39,4 @@ If the checksum does not match do not run the executable.
 
 Security reports should concern vulnerabilities in Hyclicker itself, its source code, or its official release/build process.
 
-Issues caused by third-party software, modified copies of NOVUM, or unofficial distributions may be outside the project's scope.
+Issues caused by third-party software, modified copies of Hyclicker, or unofficial distributions may be outside the project's scope.
