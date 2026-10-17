@@ -20,23 +20,21 @@
 
 # HyClicker
 
-Simple dark auto clicker for Windows. You give it a min/max CPS range and it clicks somewhere in between, drifting around so it doesn't look like a metronome. There's a global hotkey to toggle it even when the window isn't focused.
+Simple dark themed auto clicker with a clean and basic UI, Includes a global hotkey to toggle on or off.
 
-This is the Electron rewrite of an older tkinter version (which was deleted — it looked hideous thanks to tkinter's aliasing, and nobody used it).
+This is the electron rewrite of an older tkinter version (which was deleted because it looked hideous and nobody used it).
 
-## How the clicking works
+## How it works
 
-It doesn't click at one fixed rate. Every 0.5–2 seconds it picks a new target CPS somewhere inside your min/max range, then fires clicks at that rate with a bit of jitter (±15%) thrown on top. Delays are clamped between 30ms and 500ms so nothing goes insane.
-
-If you set min 8 / max 12, it'll wander around between 8 and 12 instead of sitting at one speed.
+Every 0.5–2 seconds it picks a new target CPS somewhere inside your min/max range then fires clicks at that rate with a bit of jitter thrown on top
+If you set min 8 / max 12, itll wander around between 8 and 12 instead of sitting at one speed
 
 ## Usage
 
-- `CPS (1)` / `CPS (2)` — the range it drifts between (defaults: 8 and 12)
-- `Start` — obvious. There's a short delay after starting so your cursor isn't the thing being clicked.
-- `Keybind` — click it, press whatever key you want the toggle to be. F6 by default. Works globally.
-- `Left` — click to swap to Right mouse button
-- yellow dot minimizes, red dot quits, github cat is github
+- `CPS (1)` / `CPS (2)` the range it drifts between (defaults: 8 and 12)
+- `Start` obvious. Theres a short delay after starting so your cursor isn't the thing being clicked.
+- `Keybind` click it, press whatever key you want the toggle to be. F6 by default.
+- `Left` click to swap to RMB
 
 ## Running from source
 
@@ -57,9 +55,9 @@ The exe ends up in `hyclicker-app/dist/`.
 
 ## Releases / updates
 
-The exe checks the GitHub releases page on launch. If there's a newer version it'll show a little bar with a link to the releases page — it just opens the browser, it doesn't touch anything on disk. Download the new exe yourself like a normal person.
+Detects version on every launch, if theres a old version running, you will be prompted to install the new one which you can do so from releases
 
-## The usual disclaimers
+## Disclaimers
 
-- This is unsigned, so SmartScreen might yell. The source is right here if you'd rather build it yourself.
-- A lot of games ban auto clickers. Read the ToS of whatever you're clicking on, that's on you, not me.
+- This is unsigned, smartscreen might yell
+- A lot of games ban auto clickers, read TOS before using this app any bans issued after using hyclicker are not on me
