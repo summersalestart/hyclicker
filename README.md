@@ -16,7 +16,8 @@
     <img src="https://img.shields.io/github/stars/summersalestart/hyclicker" alt="Stars">
   </a>
 </p>
-# HyClicker
+
+## HyClicker
 
 Simple dark themed auto clicker with a clean and basic UI Includes a global hotkey to toggle on or off
 
