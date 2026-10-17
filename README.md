@@ -2,11 +2,21 @@
   <img src="banner.png" alt="HyClicker">
 </div>
 
-[![Build](https://img.shields.io/github/actions/workflow/status/summersalestart/hyclicker/ci.yml?branch=main)](https://github.com/summersalestart/hyclicker/actions)
-[![Latest Release](https://img.shields.io/github/v/release/summersalestart/hyclicker)](https://github.com/summersalestart/hyclicker/releases/latest)
-[![Last Commit](https://img.shields.io/github/last-commit/summersalestart/hyclicker)](https://github.com/summersalestart/hyclicker/commits/main)
-[![Downloads](https://img.shields.io/github/downloads/summersalestart/hyclicker/total)](https://github.com/summersalestart/hyclicker/releases)
-[![Stars](https://img.shields.io/github/stars/summersalestart/hyclicker)](https://github.com/summersalestart/hyclicker/stargazers)
+ 
+<p align="center">
+  <a href="https://github.com/summersalestart/hyclicker/releases">
+    <img src="https://img.shields.io/github/v/release/summersalestart/hyclicker" alt="Latest Release">
+  </a>
+  <a href="https://github.com/summersalestart/hyclicker/commits/main">
+    <img src="https://img.shields.io/github/last-commit/summersalestart/hyclicker" alt="Last Commit">
+  </a>
+  <a href="https://github.com/summersalestart/hyclicker/releases">
+    <img src="https://img.shields.io/github/downloads/summersalestart/hyclicker/total" alt="Downloads">
+  </a>
+  <a href="https://github.com/summersalestart/hyclicker/stargazers">
+    <img src="https://img.shields.io/github/stars/summersalestart/hyclicker" alt="Stars">
+  </a>
+</p>
 
 # HyClicker
 
