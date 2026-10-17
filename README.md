@@ -17,29 +17,42 @@
   </a>
 </p>
 # HyClicker
+
 Simple dark themed auto clicker with a clean and basic UI Includes a global hotkey to toggle on or off
-## How it works
+
+# How it works
+
 Every 0.5–2 seconds it picks a new target CPS somewhere inside your min/max range then fires clicks at that rate
 If you set min to 8 and max to 12 it will only use cps around that range
-## Usage
+
+# Usage
+
 - CPS (1) / CPS (2) the range it drifts between
 - Start short delay after starting
 - Keybind press whatever key you want the toggle to be.
 - Left click to swap to RMB
-## Running from source
+
+# Running from source
+
 ```bash
 cd hyclicker-app
 npm install
 npm start
 ```
+
 ## Building
+
 ```bash
 cd hyclicker-app
 npm run dist
 ```
 The exe ends up in hyclicker-app/dist/.
-## Releases / updates
+
+# Releases / updates
+
 Detects version on every launch, if theres a old version running, you will be prompted to install the new one which you can do so from releases
-## Disclaimers
+
+# Disclaimers
+
 - This is unsigned, smartscreen might show warnings
 - A lot of games ban auto clickers, read TOS before using this app any bans issued after using hyclicker are not on me
