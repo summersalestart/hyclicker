@@ -10,25 +10,17 @@
 
   <a href="https://github.com/summersalestart/hyclicker/releases">
 
-    <img src="https://img.shields.io/github/v/release/summersalestart/hyclicker" alt="Latest Release">
-
   </a>
 
   <a href="https://github.com/summersalestart/hyclicker/commits/main">
-
-    <img src="https://img.shields.io/github/last-commit/summersalestart/hyclicker" alt="Last Commit">
 
   </a>
 
   <a href="https://github.com/summersalestart/hyclicker/releases">
 
-    <img src="https://img.shields.io/github/downloads/summersalestart/hyclicker/total" alt="Downloads">
-
   </a>
 
   <a href="https://github.com/summersalestart/hyclicker/stargazers">
-
-    <img src="https://img.shields.io/github/stars/summersalestart/hyclicker" alt="Stars">
 
   </a>
 
