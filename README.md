@@ -6,7 +6,7 @@
 
 Simple dark auto clicker for Windows. You give it a min/max CPS range and it clicks somewhere in between, drifting around so it doesn't look like a metronome. There's a global hotkey to toggle it even when the window isn't focused.
 
-This started as a tkinter thing (`main.py`, still works if that's your thing) and got rebuilt as an Electron app because tkinter's canvas has no anti-aliasing and the rounded corners looked like garbage. The Electron version is the one I actually use.
+This is the Electron rewrite of an older tkinter version (which was deleted — it looked hideous thanks to tkinter's aliasing, and nobody used it).
 
 ## How the clicking works
 
@@ -24,15 +24,6 @@ If you set min 8 / max 12, it'll wander around between 8 and 12 instead of sitti
 
 ## Running from source
 
-Python version (the original):
-
-```bash
-pip install -r requirements.txt
-python main.py
-```
-
-Electron version (the current one, under `hyclicker-app/`):
-
 ```bash
 cd hyclicker-app
 npm install
@@ -41,21 +32,12 @@ npm start
 
 ## Building
 
-Python exe:
-
-```bash
-pip install pyinstaller
-pyinstaller HyClicker.spec
-```
-
-Electron exe:
-
 ```bash
 cd hyclicker-app
 npm run dist
 ```
 
-Both end up in their respective `dist/` folders.
+The exe ends up in `hyclicker-app/dist/`.
 
 ## Releases / updates
 
