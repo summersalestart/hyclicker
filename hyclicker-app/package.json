@@ -13,8 +13,8 @@
     "@nut-tree-fork/nut-js": "^4.0.0"
   },
   "devDependencies": {
-    "electron": "^33.0.0",
-    "electron-builder": "^25.0.0"
+    "electron": "^44.9.0",
+    "electron-builder": "^26.15.3"
   },
   "build": {
     "appId": "com.hyclicker.app",
@@ -35,6 +35,7 @@
     ]
   },
   "allowScripts": {
-    "electron@33.4.11": true
+    "electron@44.9.0": true,
+    "electron-winstaller@5.4.0": true
   }
 }
