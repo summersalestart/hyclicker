@@ -103,10 +103,11 @@ window.addEventListener("keydown", async (e) => {
   }
 }, true);
 
-$("minBtn").addEventListener("click", () => app.Minimize());
-$("closeBtn").addEventListener("click", () => app.Quit());
-$("githubBtn").addEventListener("click", () => app.OpenReleases());
-updateBtn.addEventListener("click", () => app.OpenReleases());
+const rt = window.runtime;
+$("minBtn").addEventListener("click", () => rt.WindowMinimise());
+$("closeBtn").addEventListener("click", () => rt.Quit());
+$("githubBtn").addEventListener("click", () => rt.BrowserOpenURL("https://github.com/summersalestart/hyclicker"));
+updateBtn.addEventListener("click", () => rt.BrowserOpenURL("https://github.com/summersalestart/hyclicker/releases/latest"));
 mouseBtn.addEventListener("click", async () => {
   const next = mouseBtn.textContent === "Left" ? "Right" : "Left";
   mouseBtn.textContent = next;
