@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	appVersion      = "1.2.0"
+	appVersion      = "1.2.1"
 	releaseAPIURL   = "https://api.github.com/repos/summersalestart/hyclicker/releases/latest"
 	releasesPageURL = "https://github.com/summersalestart/hyclicker/releases/latest"
 )
