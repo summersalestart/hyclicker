@@ -95,7 +95,7 @@ window.addEventListener("keydown", async (e) => {
   const key = NAME_MAP[e.key] || (/^F\d+$/.test(e.code) ? e.code.replace("Arrow", "").replace("Escape", "Esc") : (e.key.length === 1 ? e.key.toUpperCase() : e.code));
   const display = [e.ctrlKey && "Ctrl", e.altKey && "Alt", e.shiftKey && "Shift"].filter(Boolean).concat(key).join("+");
   try {
-    const err = await app.SetHotkeyFromNames(key, e.ctrlKey, e.altKey, e.shiftKey);
+    const err = await app.BindHotkey(key, e.ctrlKey, e.altKey, e.shiftKey);
     if (err) { showToast(String(err)); restore(); return; }
     keybindBtn.textContent = display;
   } catch (err) {
