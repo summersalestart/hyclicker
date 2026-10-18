@@ -1,0 +1,17 @@
+{
+  "$schema": "https://wails.io/schemas/config.v2.json",
+  "name": "HyClicker",
+  "outputfilename": "HyClicker",
+  "frontend": {
+    "dir": "frontend",
+    "install": "",
+    "build": "",
+    "devInstallerCommand": ""
+  },
+  "info": {
+    "productName": "HyClicker",
+    "productVersion": "1.2.0",
+    "copyright": "Copyright © 2026",
+    "comments": "Minimal dark auto clicker"
+  }
+}
