@@ -31,9 +31,9 @@ func defWindowProc(hwnd uintptr, msg uint32, w, l uintptr) uintptr {
 	return r
 }
 
-func registerHotkey(hwnd, id uintptr, mod, vk int) bool {
-	r, _, _ := procRegisterHK.Call(hwnd, id, uintptr(mod), uintptr(vk))
-	return r != 0
+func registerHotkey(hwnd, id uintptr, mod, vk int) (bool, uint32) {
+	r, _, err := procRegisterHK.Call(hwnd, id, uintptr(mod), uintptr(vk))
+	return r != 0, uint32(err.(syscall.Errno))
 }
 
 func unregisterHotkey(hwnd, id uintptr) { procUnregister.Call(hwnd, id) }
@@ -41,7 +41,17 @@ func unregisterHotkey(hwnd, id uintptr) { procUnregister.Call(hwnd, id) }
 func destroyWindow(hwnd uintptr) { procDestroyWnd.Call(hwnd) }
 
 type windowClass struct {
-	Style, WndProc, ClsExtra, WndExtra, Instance, Icon, Cursor, Bk, MenuName, ClassName, IconSm uintptr
+	Style     uint32
+	WndProc   uintptr
+	ClsExtra  int32
+	WndExtra  int32
+	Instance  uintptr
+	Icon      uintptr
+	Cursor    uintptr
+	Bk        uintptr
+	MenuName  uintptr
+	ClassName uintptr
+	IconSm    uintptr
 }
 
 func createMessageWindow(className string, proc func(uintptr, uint32, uintptr, uintptr) uintptr) (uintptr, error) {

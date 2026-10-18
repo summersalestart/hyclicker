@@ -51,11 +51,29 @@ func (h *HotkeyManager) Register(vk, mod uint, name string) error {
 		}
 		h.window = wnd
 	}
-	if !registerHotkey(h.window, h.id, int(mod), int(vk)) {
-		return ErrHotkeyTaken
+	if vk == 0 {
+		return errors.New("no hotkey configured")
+	}
+	if err := h.tryRegister(vk, mod, name); err != nil {
+		return err
 	}
 	h.vk, h.mod, h.name = vk, mod, name
 	h.registered = true
+	return nil
+}
+
+func (h *HotkeyManager) tryRegister(vk, mod uint, name string) error {
+	if h.window == 0 {
+		wnd, err := createMessageWindow("HyClickerHotkeyWnd", h.wndProc)
+		if err != nil {
+			return fmt.Errorf("hotkey setup failed: %w", err)
+		}
+		h.window = wnd
+	}
+	ok, code := registerHotkey(h.window, h.id, int(mod), int(vk))
+	if !ok {
+		return fmt.Errorf("%w (Win32 error %d)", ErrHotkeyTaken, code)
+	}
 	return nil
 }
 

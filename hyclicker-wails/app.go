@@ -107,7 +107,8 @@ func (a *App) Toggle() {
 }
 
 func (a *App) bindHotkeyOrFallback(cfg Config) {
-	if err := a.hk.Register(cfg.HotkeyVK, cfg.HotkeyMod, cfg.HotkeyName); err == nil {
+	err := a.hk.Register(cfg.HotkeyVK, cfg.HotkeyMod, cfg.HotkeyName)
+	if err == nil {
 		return
 	}
 	if _, _, _, ok := a.hk.Current(); ok {
@@ -124,7 +125,7 @@ func (a *App) bindHotkeyOrFallback(cfg Config) {
 			return
 		}
 	}
-	a.Emit("toast", "Hotkey register failed")
+	a.Emit("toast", fmt.Sprintf("Hotkey register failed: %v", err))
 }
 
 func (a *App) persistHotkey(vk, mod uint, name string) {
