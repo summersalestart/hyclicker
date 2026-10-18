@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 	"sync"
 	"time"
 
@@ -106,8 +108,22 @@ func (a *App) Toggle() {
 	}
 }
 
+func logHotkey(action string, err error) {
+	f, ferr := os.OpenFile(filepath.Join(os.Getenv("APPDATA"), "HyClicker", "log.txt"), os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if ferr != nil {
+		return
+	}
+	defer f.Close()
+	if err != nil {
+		fmt.Fprintf(f, "%s %s %v\n", time.Now().Format("15:04:05"), action, err)
+	} else {
+		fmt.Fprintf(f, "%s %s OK\n", time.Now().Format("15:04:05"), action)
+	}
+}
+
 func (a *App) bindHotkeyOrFallback(cfg Config) {
 	err := a.hk.Register(cfg.HotkeyVK, cfg.HotkeyMod, cfg.HotkeyName)
+	logHotkey("startup("+cfg.HotkeyName+")", err)
 	if err == nil {
 		return
 	}
@@ -120,10 +136,12 @@ func (a *App) bindHotkeyOrFallback(cfg Config) {
 			continue
 		}
 		if err := a.hk.Register(vk, 0, alt); err == nil {
+			logHotkey("fallback("+alt+")", nil)
 			a.persistHotkey(vk, 0, alt)
 			a.Emit("hotkey-changed", alt)
 			return
 		}
+		logHotkey("fallback("+alt+")", err)
 	}
 	a.Emit("toast", fmt.Sprintf("Hotkey register failed: %v", err))
 }
@@ -164,8 +182,10 @@ func (a *App) BindHotkey(key string, ctrl, alt, shift bool) error {
 		mod |= modShift
 	}
 	if err := a.hk.Register(vk, uint(mod), key); err != nil {
+		logHotkey("bind("+key+")", err)
 		return err
 	}
+	logHotkey("bind("+key+")", nil)
 
 	a.mu.Lock()
 	a.cfg.HotkeyVK, a.cfg.HotkeyMod, a.cfg.HotkeyName = vk, uint(mod), key

@@ -1,7 +1,6 @@
 package main
 
 import (
-	"sync"
 	"syscall"
 	"unsafe"
 )
@@ -24,6 +23,12 @@ var (
 	procCreateMutex   = kernel32.NewProc("CreateMutexW")
 	procFindWindow    = user32.NewProc("FindWindowW")
 	procSetForeground = user32.NewProc("SetForegroundWindow")
+	procGetCurrentId  = kernel32.NewProc("GetCurrentThreadId")
+	procPostThreadMsg = user32.NewProc("PostThreadMessageW")
+	procCreateEvent   = kernel32.NewProc("CreateEventW")
+	procSetEvent      = kernel32.NewProc("SetEvent")
+	procMsgWait       = user32.NewProc("MsgWaitForMultipleObjects")
+	procPeekMsg       = user32.NewProc("PeekMessageW")
 )
 
 func defWindowProc(hwnd uintptr, msg uint32, w, l uintptr) uintptr {
@@ -81,38 +86,53 @@ func createMessageWindow(className string, proc func(uintptr, uint32, uintptr, u
 	if hwnd == 0 {
 		return 0, createErr
 	}
-	go pumpMessages(hwnd)
 	return hwnd, nil
 }
 
-var pumps sync.Map
-
-func pumpMessages(hwnd uintptr) {
-	quit, _ := pumps.LoadOrStore(hwnd, make(chan struct{}))
-
+func pumpLoop(hwnd, event uintptr, cmd <-chan func(), done chan<- struct{}) {
+	defer func() {
+		procDestroyWnd.Call(hwnd)
+		if done != nil {
+			close(done)
+		}
+	}()
 	var msg struct {
 		Hwnd, Message, WParam, LParam uintptr
 		Time                          uint32
-		Pt                            struct{ X, Y int32 }
+		Pt                            struct {
+			X, Y int32
+		}
 	}
 	for {
-		select {
-		case <-quit.(chan struct{}):
-			return
-		default:
+		procMsgWait.Call(1, uintptr(unsafe.Pointer(&event)), 0, 0xFFFFFFFF, 0x04FF)
+		drainCommands(cmd)
+		for {
+			r, _, _ := procPeekMsg.Call(uintptr(unsafe.Pointer(&msg)), 0, 0, 0, 1)
+			if r == 0 {
+				break
+			}
+			if msg.Message == 0x0012 {
+				return
+			}
+			procDispatchMsg.Call(uintptr(unsafe.Pointer(&msg)))
 		}
-		r, _, _ := procGetMsg.Call(uintptr(unsafe.Pointer(&msg)), 0, 0, 0)
-		if r == 0 || r == ^uintptr(0) {
-			return
-		}
-		procDispatchMsg.Call(uintptr(unsafe.Pointer(&msg)))
 	}
 }
 
-func stopPump(hwnd uintptr) {
-	if q, ok := pumps.Load(hwnd); ok {
-		close(q.(chan struct{}))
-		pumps.Delete(hwnd)
+func drainCommands(cmd <-chan func()) {
+	for {
+		select {
+		case f := <-cmd:
+			f()
+		default:
+			return
+		}
+	}
+}
+
+func postQuit(threadID uint32) {
+	if threadID != 0 {
+		procPostThreadMsg.Call(uintptr(threadID), 0x0012, 0, 0)
 	}
 }
 

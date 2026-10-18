@@ -99,8 +99,7 @@ window.addEventListener("keydown", async (e) => {
     if (err) { showToast(String(err)); restore(); return; }
     keybindBtn.textContent = display;
   } catch (err) {
-    keybindBtn.textContent = "F6";
-    showToast("Hotkey register failed");
+    showToast(String(err));
   }
 }, true);
 

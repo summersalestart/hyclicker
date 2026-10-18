@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"runtime"
 	"sync"
 	"syscall"
 	"unsafe"
@@ -23,6 +24,10 @@ const (
 type HotkeyManager struct {
 	mu         sync.Mutex
 	window     uintptr
+	threadID   uint32
+	event      uintptr
+	cmd        chan func()
+	done       chan struct{}
 	id         uintptr
 	vk         uint
 	mod        uint
@@ -41,39 +46,27 @@ func (h *HotkeyManager) Register(vk, mod uint, name string) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	if h.registered {
-		unregisterHotkey(h.window, h.id)
+		h.doOnThread(func() { unregisterHotkey(h.window, h.id) })
 		h.registered = false
-	}
-	if h.window == 0 {
-		wnd, err := createMessageWindow("HyClickerHotkeyWnd", h.wndProc)
-		if err != nil {
-			return fmt.Errorf("hotkey setup failed: %w", err)
-		}
-		h.window = wnd
 	}
 	if vk == 0 {
 		return errors.New("no hotkey configured")
 	}
-	if err := h.tryRegister(vk, mod, name); err != nil {
-		return err
+	if err := h.ensureWindowThread(); err != nil {
+		return fmt.Errorf("hotkey setup failed: %w", err)
+	}
+	ok := doOnThreadWait(h.cmd, h.event, func() uint32 {
+		good, code := registerHotkey(h.window, h.id, int(mod), int(vk))
+		if !good {
+			return code
+		}
+		return 0
+	})
+	if ok != 0 {
+		return fmt.Errorf("%w (Win32 error %d)", ErrHotkeyTaken, ok)
 	}
 	h.vk, h.mod, h.name = vk, mod, name
 	h.registered = true
-	return nil
-}
-
-func (h *HotkeyManager) tryRegister(vk, mod uint, name string) error {
-	if h.window == 0 {
-		wnd, err := createMessageWindow("HyClickerHotkeyWnd", h.wndProc)
-		if err != nil {
-			return fmt.Errorf("hotkey setup failed: %w", err)
-		}
-		h.window = wnd
-	}
-	ok, code := registerHotkey(h.window, h.id, int(mod), int(vk))
-	if !ok {
-		return fmt.Errorf("%w (Win32 error %d)", ErrHotkeyTaken, code)
-	}
 	return nil
 }
 
@@ -86,6 +79,53 @@ func (h *HotkeyManager) Current() (vk, mod uint, name string, ok bool) {
 	return h.vk, h.mod, h.name, true
 }
 
+func (h *HotkeyManager) doOnThread(f func()) {
+	if h.cmd != nil {
+		h.cmd <- f
+		if h.event != 0 {
+			procSetEvent.Call(h.event)
+		}
+	}
+}
+
+func doOnThreadWait(cmd chan func(), ev uintptr, f func() uint32) uint32 {
+	res := make(chan uint32, 1)
+	cmd <- func() { res <- f() }
+	if ev != 0 {
+		procSetEvent.Call(ev)
+	}
+	return <-res
+}
+
+func (h *HotkeyManager) ensureWindowThread() error {
+	if h.window != 0 {
+		return nil
+	}
+	wndCh := make(chan threadWindow, 1)
+	cmd := make(chan func(), 8)
+	done := make(chan struct{})
+	event, _, _ := procCreateEvent.Call(0, 0, 0, 0)
+	h.cmd, h.done, h.event = cmd, done, event
+	go func() {
+		runtime.LockOSThread()
+		defer runtime.UnlockOSThread()
+		wnd, err := createMessageWindow("HyClickerHotkeyWnd", h.wndProc)
+		tid, _, _ := procGetCurrentId.Call()
+		wndCh <- threadWindow{wnd: wnd, tid: uint32(tid), err: err}
+		if err != nil {
+			return
+		}
+		pumpLoop(wnd, event, cmd, done)
+	}()
+	r := <-wndCh
+	if r.err != nil {
+		h.cmd, h.done, h.event = nil, nil, 0
+		return r.err
+	}
+	h.window, h.threadID = r.wnd, r.tid
+	return nil
+}
+
 func (h *HotkeyManager) Release() {
 	h.mu.Lock()
 	defer h.mu.Unlock()
@@ -93,12 +133,19 @@ func (h *HotkeyManager) Release() {
 		return
 	}
 	if h.registered {
-		unregisterHotkey(h.window, h.id)
+		doOnThreadWait(h.cmd, h.event, func() uint32 {
+			unregisterHotkey(h.window, h.id)
+			return 0
+		})
 		h.registered = false
 	}
-	stopPump(h.window)
-	destroyWindow(h.window)
+	postQuit(h.threadID)
+	<-h.done
 	h.window = 0
+	h.threadID = 0
+	h.event = 0
+	h.cmd = nil
+	h.done = nil
 }
 
 func (h *HotkeyManager) wndProc(hwnd uintptr, msg uint32, w, l uintptr) uintptr {
@@ -147,6 +194,12 @@ func toUpperASCII(s string) string {
 }
 
 var errAlreadyRunning = errors.New("instance already running")
+
+type threadWindow struct {
+	wnd uintptr
+	tid uint32
+	err error
+}
 
 func acquireSingleInstance() error {
 	name, err := syscall.UTF16PtrFromString(`Local\HyClicker.SingleInstance`)
