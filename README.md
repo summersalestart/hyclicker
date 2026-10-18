@@ -36,18 +36,17 @@ If you set min to 8 and max to 12 it will only use cps around that range
 # Running from source
 
 ```bash
-cd hyclicker-app
-npm install
-npm start
+go install github.com/wailsapp/wails/v2/cmd/wails@latest
+cd hyclicker-wails
+wails dev
 ```
 
 ## Building
 
 ```bash
-cd hyclicker-app
-npm run dist
+wails build -s
 ```
-The exe ends up in hyclicker-app/dist/.
+The exe ends up in hyclicker-wails/build/bin/.
 
 # Releases / updates
 

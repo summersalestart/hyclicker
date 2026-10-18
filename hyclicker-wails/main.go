@@ -13,12 +13,10 @@ import (
 //go:embed all:frontend
 var assets embed.FS
 
-const AppVersion = "1.2.0"
-
 func main() {
 	app := NewApp()
 
-	err := wails.Run(&options.App{
+	if err := wails.Run(&options.App{
 		Title:         "HyClicker",
 		Width:         342,
 		Height:        382,
@@ -27,15 +25,14 @@ func main() {
 		AssetServer: &assetserver.Options{
 			Assets: assets,
 		},
-		OnStartup:  app.startup,
-		OnShutdown: app.shutdown,
+		OnStartup:  app.Startup,
+		OnShutdown: app.Shutdown,
 		Windows: &windows.Options{
 			WebviewIsTransparent: true,
 			WindowIsTranslucent:  true,
 		},
 		Bind: []interface{}{app},
-	})
-	if err != nil {
+	}); err != nil {
 		log.Fatal(err)
 	}
 }

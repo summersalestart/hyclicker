@@ -1,155 +1,200 @@
 package main
 
 import (
+	"errors"
 	"math/rand"
 	"sync"
 	"time"
 )
 
+type MouseButton string
+
 const (
-	MOUSEEVENTF_LEFTDOWN  = 0x0002
-	MOUSEEVENTF_LEFTUP    = 0x0004
-	MOUSEEVENTF_RIGHTDOWN = 0x0008
-	MOUSEEVENTF_RIGHTUP   = 0x0010
-	MOUSEEVENTF_MIDDOWN   = 0x0020
-	MOUSEEVENTF_MIDDLEUP  = 0x0040
+	ButtonLeft   MouseButton = "Left"
+	ButtonRight  MouseButton = "Right"
+	ButtonMiddle MouseButton = "Middle"
 )
 
-type MOUSEINPUT struct {
-	Dx, Dy      int32
-	MouseData   uint32
-	DwFlags     uint32
-	DwTime      uint32
-	DwExtraInfo uintptr
+type buttonPair struct{ down, up uint32 }
+
+var buttonPairs = map[MouseButton]buttonPair{
+	ButtonLeft:   {down: 0x0002, up: 0x0004},
+	ButtonRight:  {down: 0x0008, up: 0x0010},
+	ButtonMiddle: {down: 0x0020, up: 0x0040},
 }
 
-type INPUT struct {
-	Type  uint32
-	Mouse MOUSEINPUT
+func resolveButton(name MouseButton) buttonPair {
+	if p, ok := buttonPairs[name]; ok {
+		return p
+	}
+	return buttonPairs[ButtonLeft]
+}
+
+type engineConfig struct {
+	minCps float64
+	maxCps float64
+	button MouseButton
 }
 
 type ClickEngine struct {
 	mu        sync.Mutex
 	running   bool
 	stop      chan struct{}
-	minCps    float64
-	maxCps    float64
-	button    string
-	onState   func(bool)
+	done      chan struct{}
+	cfg       engineConfig
+	stateFn   func(bool)
 	lastPhase float64
 }
 
-func NewClickEngine() *ClickEngine { return &ClickEngine{stop: make(chan struct{})} }
-
-func (e *ClickEngine) Configure(minCps, maxCps float64, button string) {
-	if minCps <= 0 {
-		minCps = 0.1
+func NewClickEngine() *ClickEngine {
+	return &ClickEngine{
+		cfg: engineConfig{minCps: 8, maxCps: 12, button: ButtonLeft},
 	}
-	if maxCps < minCps {
-		maxCps = minCps
-	}
-	e.mu.Lock()
-	e.minCps, e.maxCps, e.button = minCps, maxCps, button
-	e.mu.Unlock()
 }
 
-func (e *ClickEngine) OnStateChange(fn func(bool)) { e.onState = fn }
+var ErrEngineRunning = errors.New("engine already running")
 
-func (e *ClickEngine) IsRunning() bool {
+func (e *ClickEngine) SetConfig(minCps, maxCps float64, button MouseButton) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.cfg = engineConfig{
+		minCps: clampFloat(minCps, 0.1, maxCps),
+		maxCps: clampFloat(maxCps, 0.1, maxCps),
+		button: button,
+	}
+}
+
+func (e *ClickEngine) CurrentConfig() engineConfig {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return e.cfg
+}
+
+func (e *ClickEngine) OnStateChange(fn func(bool)) {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	e.stateFn = fn
+}
+
+func (e *ClickEngine) Running() bool {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	return e.running
 }
 
-func (e *ClickEngine) Start() {
+func (e *ClickEngine) Start() error {
 	e.mu.Lock()
 	if e.running {
 		e.mu.Unlock()
-		return
+		return ErrEngineRunning
 	}
-	e.running = true
-	e.stop = make(chan struct{})
-	go e.loop(e.stop)
+	stop := make(chan struct{})
+	done := make(chan struct{})
+	e.stop, e.done, e.running = stop, done, true
 	e.mu.Unlock()
-	e.notify(true)
+
+	go func() {
+		e.mu.Lock()
+		cfg := e.cfg
+		e.mu.Unlock()
+		runLoop(stop, cfg, &e.lastPhase)
+		close(done)
+		e.mu.Lock()
+		e.running = false
+		e.mu.Unlock()
+		e.emit(false)
+	}()
+	e.emit(true)
+	return nil
 }
 
 func (e *ClickEngine) Stop() {
 	e.mu.Lock()
-	if !e.running {
-		e.mu.Unlock()
+	stop, done, running := e.stop, e.done, e.running
+	e.mu.Unlock()
+	if !running {
 		return
 	}
-	e.running = false
-	close(e.stop)
-	e.mu.Unlock()
-	e.notify(false)
-}
-
-func (e *ClickEngine) notify(r bool) {
-	if e.onState != nil {
-		go e.onState(r)
+	close(stop)
+	select {
+	case <-done:
+	case <-time.After(2 * time.Second):
 	}
 }
 
-func pickPhaseCps(min, max, avoid float64) float64 {
-	v := min + rand.Float64()*(max-min)
+func (e *ClickEngine) emit(running bool) {
+	e.mu.Lock()
+	fn := e.stateFn
+	e.mu.Unlock()
+	if fn != nil {
+		go fn(running)
+	}
+}
+
+const (
+	phaseMinMillis   = 500.0
+	phaseMaxMillis   = 2000.0
+	delayMinMillis   = 30.0
+	delayMaxMillis   = 500.0
+	jitterFraction   = 0.15
+	startDelayMillis = 350.0
+)
+
+func runLoop(stop <-chan struct{}, cfg engineConfig, lastPhase *float64) {
+	select {
+	case <-stop:
+		return
+	case <-time.After(time.Duration(startDelayMillis) * time.Millisecond):
+	}
+
+	var targetCps, phaseDeadline float64
+	for {
+		now := monotonicMillis()
+		if targetCps == 0 || now >= phaseDeadline {
+			targetCps = nextPhaseCps(cfg.minCps, cfg.maxCps, *lastPhase)
+			*lastPhase = targetCps
+			phaseDeadline = now + (phaseMinMillis + rand.Float64()*(phaseMaxMillis-phaseMinMillis))
+		}
+		sendClickPair(resolveButton(cfg.button))
+
+		select {
+		case <-stop:
+			return
+		case <-time.After(clickDelay(targetCps)):
+		}
+	}
+}
+
+func monotonicMillis() float64 {
+	return float64(time.Now().UnixNano()) / 1e6
+}
+
+func nextPhaseCps(min, max, avoid float64) float64 {
 	span := max - min
+	v := min + rand.Float64()*span
 	if span > 0.5 {
 		for i := 0; i < 5; i++ {
 			if abs(v-avoid) >= span*0.15 {
 				break
 			}
-			v = min + rand.Float64()*(max-min)
+			v = min + rand.Float64()*span
 		}
 	}
 	return v
 }
 
-func abs(x float64) float64 {
-	if x < 0 {
-		return -x
-	}
-	return x
+func clickDelay(targetCps float64) time.Duration {
+	ideal := 1000 / clampFloat(targetCps, 0.1, 1e6)
+	jitter := 1 + (rand.Float64()*2*jitterFraction - jitterFraction)
+	ms := clampFloat(ideal*jitter, delayMinMillis, delayMaxMillis)
+	return time.Duration(ms) * time.Millisecond
 }
 
-func (e *ClickEngine) loop(stop chan struct{}) {
-	time.Sleep(350 * time.Millisecond) // grace: don't click the Start button itself
-	var targetCps, phaseEnd float64
-	now := func() float64 { return float64(time.Now().UnixNano()) / 1e6 }
-
-	for {
-		select {
-		case <-stop:
-			return
-		default:
-		}
-
-		e.mu.Lock()
-		minCps, maxCps, button := e.minCps, e.maxCps, e.button
-		e.mu.Unlock()
-
-		t := now()
-		if targetCps == 0 || t >= phaseEnd {
-			targetCps = pickPhaseCps(minCps, maxCps, e.lastPhase)
-			e.lastPhase = targetCps
-			phaseEnd = t + 500 + rand.Float64()*1500
-		}
-		ideal := 1000 / max(targetCps, 0.1)
-		jitter := 1 + (rand.Float64()*0.3 - 0.15)
-		delay := clamp(ideal*jitter, 30, 500)
-
-		clickOnce(button)
-
-		select {
-		case <-stop:
-			return
-		case <-time.After(time.Duration(delay) * time.Millisecond):
-		}
-	}
+func sendClickPair(p buttonPair) {
+	sendInput(clickInput(p.down, p.up))
 }
 
-func clamp(v, lo, hi float64) float64 {
+func clampFloat(v, lo, hi float64) float64 {
 	if v < lo {
 		return lo
 	}
@@ -159,24 +204,9 @@ func clamp(v, lo, hi float64) float64 {
 	return v
 }
 
-func max(a, b float64) float64 {
-	if a > b {
-		return a
+func abs(v float64) float64 {
+	if v < 0 {
+		return -v
 	}
-	return b
-}
-
-func clickOnce(button string) {
-	var down, up uint32 = MOUSEEVENTF_LEFTDOWN, MOUSEEVENTF_LEFTUP
-	switch button {
-	case "Right":
-		down, up = MOUSEEVENTF_RIGHTDOWN, MOUSEEVENTF_RIGHTUP
-	case "Middle":
-		down, up = MOUSEEVENTF_MIDDOWN, MOUSEEVENTF_MIDDLEUP
-	}
-	inputs := []INPUT{
-		{Type: 0, Mouse: MOUSEINPUT{DwFlags: down}},
-		{Type: 0, Mouse: MOUSEINPUT{DwFlags: up}},
-	}
-	_ = sendInputs(inputs)
+	return v
 }

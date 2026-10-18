@@ -1,76 +1,37 @@
 package main
 
 import (
-	"fmt"
-	"sync"
+	"unsafe"
 )
 
-const (
-	VK_F6       = 0x75
-	MOD_ALT     = 0x0001
-	MOD_CONTROL = 0x0002
-	MOD_SHIFT   = 0x0004
-	MOD_WIN     = 0x0008
-	WM_HOTKEY   = 0x0312
-)
-
-type Hotkey struct {
-	mu         sync.Mutex
-	hotkeyID   uintptr
-	window     uintptr
-	currentVK  uint
-	currentMod uint
-	registered bool
-	onTrigger  func()
-	className  string
+type MOUSEINPUT struct {
+	X, Y      int32
+	MouseData uint32
+	Flags     uint32
+	Time      uint32
+	ExtraInfo uintptr
 }
 
-func NewHotkey(onTrigger func()) *Hotkey {
-	return &Hotkey{onTrigger: onTrigger, hotkeyID: 0xB00B, className: "HyClickerHotkeyWnd"}
+type INPUT struct {
+	Type  uint32
+	_     [4]byte
+	Mouse MOUSEINPUT
 }
 
-func (h *Hotkey) Register(vk, mod uint) error {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	if h.registered {
-		unregisterHotkey(h.window, h.hotkeyID)
-		h.registered = false
+func sendInput(inputs []INPUT) {
+	if len(inputs) == 0 {
+		return
 	}
-	if h.window == 0 {
-		wnd, err := createHiddenWindow(h.className, h.wndProc)
-		if err != nil {
-			return err
-		}
-		h.window = wnd
-	}
-	if !registerHotkey(h.window, h.hotkeyID, int(mod), int(vk)) {
-		return fmt.Errorf("hotkey is taken or blocked")
-	}
-	h.currentVK, h.currentMod = vk, mod
-	h.registered = true
-	return nil
+	procSendInput.Call(
+		uintptr(len(inputs)),
+		uintptr(unsafe.Pointer(&inputs[0])),
+		unsafe.Sizeof(inputs[0]),
+	)
 }
 
-func (h *Hotkey) Unregister() {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	if h.registered {
-		unregisterHotkey(h.window, h.hotkeyID)
-		h.registered = false
-	}
-	if h.window != 0 {
-		stopPump(h.window)
-		destroyWindow(h.window)
-		h.window = 0
+func clickInput(down, up uint32) []INPUT {
+	return []INPUT{
+		{Mouse: MOUSEINPUT{Flags: down}},
+		{Mouse: MOUSEINPUT{Flags: up}},
 	}
 }
-
-func (h *Hotkey) wndProc(hwnd uintptr, msg uint32, w, l uintptr) uintptr {
-	if msg == WM_HOTKEY && w == h.hotkeyID && h.onTrigger != nil {
-		go h.onTrigger()
-		return 0
-	}
-	return defWindowProc(hwnd, msg, w, l)
-}
-
-// ---- friendly key name -> VK (implemented in app.go) ----
