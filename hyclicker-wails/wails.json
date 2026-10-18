@@ -2,6 +2,9 @@
   "$schema": "https://wails.io/schemas/config.v2.json",
   "name": "HyClicker",
   "outputfilename": "HyClicker",
+  "postBuildHooks": {
+    "windows/amd64": "powershell -ExecutionPolicy Bypass -File {{.ProjectDir}}\\scripts\\update-shortcut.ps1"
+  },
   "frontend": {
     "dir": "frontend",
     "install": "",
