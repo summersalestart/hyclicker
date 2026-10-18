@@ -78,6 +78,16 @@ keybindBtn.addEventListener("click", () => {
   keybindBtn.classList.add("capturing");
 });
 
+window.addEventListener("keyup", (e) => {
+  if (!capturing) return;
+  if (e.ctrlKey || e.altKey || e.shiftKey || e.metaKey) return;
+  const cfg = app.GetConfig().then((c) => {
+    keybindBtn.textContent = c.hotkey_name || "F6";
+  });
+  capturing = false;
+  keybindBtn.classList.remove("capturing");
+}, true);
+
 const NAME_MAP = {
   " ": "Space", ArrowUp: "Up", ArrowDown: "Down", ArrowLeft: "Left", ArrowRight: "Right",
   Escape: "Esc", Tab: "Tab", Enter: "Enter", Delete: "Del", Insert: "Ins",
@@ -85,6 +95,9 @@ const NAME_MAP = {
 window.addEventListener("keydown", async (e) => {
   if (!capturing) return;
   e.preventDefault();
+  if (["Control", "Alt", "Shift", "Meta", "ControlRight", "ControlLeft", "ShiftLeft", "ShiftRight", "AltLeft", "AltRight", "MetaLeft", "MetaRight"].includes(e.key)) {
+    return;
+  }
   capturing = false;
   keybindBtn.classList.remove("capturing");
   if (e.key === "Escape") {
