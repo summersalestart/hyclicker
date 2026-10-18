@@ -22,7 +22,7 @@
 html, body { width: 342px; height: 382px; background: transparent; overflow: hidden;
   font-family: "Segoe UI", Bahnschrift, Arial, sans-serif; }
 .window {
-  width: 342px; height: 382px; background: var(--bg); border-radius: 26px;
+  width: 342px; height: 382px; background: var(--bg);
   position: relative; overflow: hidden;
 }
 header {
