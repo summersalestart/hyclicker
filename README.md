@@ -23,7 +23,7 @@ Simple dark themed auto clicker with a clean and basic UI Includes a global hotk
 
 # How it works
 
-Every 0.5–2 seconds it picks a new target CPS somewhere inside your min/max range then fires clicks at that rate
+Every 0.5 - 2 seconds it picks a new target CPS somewhere inside your min/max range then fires clicks at that rate
 If you set min to 8 and max to 12 it will only use cps around that range
 
 # Usage
