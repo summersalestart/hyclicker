@@ -69,6 +69,7 @@ window.runtime.EventsOn("update-available", (v) => {
   updateBtn.textContent = "Get it";
   updateBar.hidden = false;
 });
+window.runtime.EventsOn("hotkey-changed", (name) => { keybindBtn.textContent = name; showToast(`${name} was free; bound it instead`); });
 
 // keybind capture: click pill, then press a key
 keybindBtn.addEventListener("click", () => {

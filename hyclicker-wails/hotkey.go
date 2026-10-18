@@ -4,10 +4,12 @@ import (
 	"errors"
 	"fmt"
 	"sync"
+	"syscall"
+	"unsafe"
 )
 
 const (
-	hotkeyID = 0xB00B
+	hotkeyID  = 0xB00B
 	WM_HOTKEY = 0x0312
 )
 
@@ -19,14 +21,14 @@ const (
 )
 
 type HotkeyManager struct {
-	mu        sync.Mutex
-	window    uintptr
-	id        uintptr
-	vk        uint
-	mod       uint
-	name      string
+	mu         sync.Mutex
+	window     uintptr
+	id         uintptr
+	vk         uint
+	mod        uint
+	name       string
 	registered bool
-	onTrigger func()
+	onTrigger  func()
 }
 
 func NewHotkeyManager(onTrigger func()) *HotkeyManager {
@@ -50,7 +52,6 @@ func (h *HotkeyManager) Register(vk, mod uint, name string) error {
 		h.window = wnd
 	}
 	if !registerHotkey(h.window, h.id, int(mod), int(vk)) {
-		h.recallDefaults()
 		return ErrHotkeyTaken
 	}
 	h.vk, h.mod, h.name = vk, mod, name
@@ -58,12 +59,13 @@ func (h *HotkeyManager) Register(vk, mod uint, name string) error {
 	return nil
 }
 
-func (h *HotkeyManager) recallDefaults() {
-	if h.vk != 0 {
-		if registerHotkey(h.window, h.id, int(h.mod), int(h.vk)) {
-			h.registered = true
-		}
+func (h *HotkeyManager) Current() (vk, mod uint, name string, ok bool) {
+	h.mu.Lock()
+	defer h.mu.Unlock()
+	if !h.registered {
+		return 0, 0, "", false
 	}
+	return h.vk, h.mod, h.name, true
 }
 
 func (h *HotkeyManager) Release() {
@@ -79,15 +81,6 @@ func (h *HotkeyManager) Release() {
 	stopPump(h.window)
 	destroyWindow(h.window)
 	h.window = 0
-}
-
-func (h *HotkeyManager) Current() (vk, mod uint, name string, ok bool) {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	if !h.registered {
-		return 0, 0, "", false
-	}
-	return h.vk, h.mod, h.name, true
 }
 
 func (h *HotkeyManager) wndProc(hwnd uintptr, msg uint32, w, l uintptr) uintptr {
@@ -133,4 +126,30 @@ func toUpperASCII(s string) string {
 		}
 	}
 	return string(b)
+}
+
+var errAlreadyRunning = errors.New("instance already running")
+
+func acquireSingleInstance() error {
+	name, err := syscall.UTF16PtrFromString(`Local\HyClicker.SingleInstance`)
+	if err != nil {
+		return err
+	}
+	handle, _, callErr := procCreateMutex.Call(0, 0, uintptr(unsafe.Pointer(name)))
+	if handle == 0 {
+		return callErr
+	}
+	const errorAlreadyExists = 183
+	if callErr == syscall.Errno(errorAlreadyExists) {
+		return errAlreadyRunning
+	}
+	return nil
+}
+
+func focusExistingInstance() {
+	title, _ := syscall.UTF16PtrFromString("HyClicker")
+	hwnd, _, _ := procFindWindow.Call(0, uintptr(unsafe.Pointer(title)))
+	if hwnd != 0 {
+		procSetForeground.Call(hwnd)
+	}
 }

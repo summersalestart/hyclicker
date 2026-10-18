@@ -26,6 +26,7 @@ func main() {
 			Assets: assets,
 		},
 		OnStartup:  app.Startup,
+		OnDomReady: app.DomReady,
 		OnShutdown: app.Shutdown,
 		Windows: &windows.Options{
 			WebviewIsTransparent: true,

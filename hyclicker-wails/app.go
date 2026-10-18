@@ -12,17 +12,24 @@ import (
 )
 
 type App struct {
-	ctx    context.Context
-	mu     sync.Mutex
-	cfg    Config
-	engine *ClickEngine
-	hk     *HotkeyManager
+	ctx       context.Context
+	quietExit bool
+	mu        sync.Mutex
+	cfg       Config
+	engine    *ClickEngine
+	hk        *HotkeyManager
 }
 
 func NewApp() *App { return &App{} }
 
 func (a *App) Startup(ctx context.Context) {
+	if err := acquireSingleInstance(); err != nil {
+		focusExistingInstance()
+		a.quietExit = true
+		return
+	}
 	a.ctx = ctx
+	a.quietExit = false
 	cfg := readConfig(appConfigPath())
 	a.cfg = cfg
 
@@ -33,11 +40,14 @@ func (a *App) Startup(ctx context.Context) {
 	a.engine.SetConfig(cfg.MinCps, cfg.MaxCps, normalizeButtonE(cfg.Button))
 
 	a.hk = NewHotkeyManager(func() { a.Emit("request-toggle", nil) })
-	if err := a.hk.Register(cfg.HotkeyVK, cfg.HotkeyMod, cfg.HotkeyName); err != nil {
-		a.Emit("toast", err.Error())
-	}
-
+	a.bindHotkeyOrFallback(cfg)
 	go a.pollForUpdate()
+}
+
+func (a *App) DomReady(ctx context.Context) {
+	if a.quietExit {
+		wails.Quit(ctx)
+	}
 }
 
 func (a *App) Shutdown(context.Context) {
@@ -94,6 +104,47 @@ func (a *App) Toggle() {
 	if err := a.engine.Start(); err != nil {
 		a.Emit("toast", err.Error())
 	}
+}
+
+func (a *App) bindHotkeyOrFallback(cfg Config) {
+	if err := a.hk.Register(cfg.HotkeyVK, cfg.HotkeyMod, cfg.HotkeyName); err == nil {
+		return
+	}
+	if _, _, _, ok := a.hk.Current(); ok {
+		return
+	}
+	for _, alt := range fallbackKeys(cfg.HotkeyName) {
+		vk, err := vkFromName(alt)
+		if err != nil {
+			continue
+		}
+		if err := a.hk.Register(vk, 0, alt); err == nil {
+			a.persistHotkey(vk, 0, alt)
+			a.Emit("hotkey-changed", alt)
+			return
+		}
+	}
+	a.Emit("toast", "Hotkey register failed")
+}
+
+func (a *App) persistHotkey(vk, mod uint, name string) {
+	a.mu.Lock()
+	a.cfg.HotkeyVK, a.cfg.HotkeyMod, a.cfg.HotkeyName = vk, mod, name
+	cfg := a.cfg
+	a.mu.Unlock()
+	writeConfig(appConfigPath(), cfg)
+}
+
+func fallbackKeys(taken string) []string {
+	all := []string{"F6", "F7", "F8", "F9", "F10"}
+	used := toUpperASCII(taken)
+	out := make([]string, 0, len(all))
+	for _, c := range all {
+		if toUpperASCII(c) != used {
+			out = append(out, c)
+		}
+	}
+	return out
 }
 
 func (a *App) BindHotkey(key string, ctrl, alt, shift bool) error {
