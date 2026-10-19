@@ -34,6 +34,7 @@ type engineConfig struct {
 	minCps float64
 	maxCps float64
 	button MouseButton
+	rocket bool
 }
 
 type ClickEngine struct {
@@ -54,14 +55,21 @@ func NewClickEngine() *ClickEngine {
 
 var ErrEngineRunning = errors.New("engine already running")
 
-func (e *ClickEngine) SetConfig(minCps, maxCps float64, button MouseButton) {
+func (e *ClickEngine) SetConfig(minCps, maxCps float64, button MouseButton, rocket bool) {
 	e.mu.Lock()
 	defer e.mu.Unlock()
 	e.cfg = engineConfig{
 		minCps: clampFloat(minCps, 0.1, maxCps),
 		maxCps: clampFloat(maxCps, 0.1, maxCps),
 		button: button,
+		rocket: rocket,
 	}
+}
+
+func (e *ClickEngine) current() engineConfig {
+	e.mu.Lock()
+	defer e.mu.Unlock()
+	return e.cfg
 }
 
 func (e *ClickEngine) CurrentConfig() engineConfig {
@@ -94,10 +102,7 @@ func (e *ClickEngine) Start() error {
 	e.mu.Unlock()
 
 	go func() {
-		e.mu.Lock()
-		cfg := e.cfg
-		e.mu.Unlock()
-		runLoop(stop, cfg, &e.lastPhase)
+		runLoop(stop, e, &e.lastPhase)
 		close(done)
 		e.mu.Lock()
 		e.running = false
@@ -140,17 +145,23 @@ const (
 	startDelayMillis = 350.0
 )
 
-func runLoop(stop <-chan struct{}, cfg engineConfig, lastPhase *float64) {
-	select {
-	case <-stop:
-		return
-	case <-time.After(time.Duration(startDelayMillis) * time.Millisecond):
+func runLoop(stop <-chan struct{}, e *ClickEngine, lastPhase *float64) {
+	cfg := e.current()
+	if !cfg.rocket {
+		select {
+		case <-stop:
+			return
+		case <-time.After(time.Duration(startDelayMillis) * time.Millisecond):
+		}
 	}
 
 	var targetCps, phaseDeadline float64
 	for {
+		cfg = e.current()
 		now := monotonicMillis()
-		if targetCps == 0 || now >= phaseDeadline {
+		if cfg.rocket {
+			targetCps = cfg.maxCps
+		} else if targetCps == 0 || now >= phaseDeadline {
 			targetCps = nextPhaseCps(cfg.minCps, cfg.maxCps, *lastPhase)
 			*lastPhase = targetCps
 			phaseDeadline = now + (phaseMinMillis + rand.Float64()*(phaseMaxMillis-phaseMinMillis))
@@ -160,7 +171,7 @@ func runLoop(stop <-chan struct{}, cfg engineConfig, lastPhase *float64) {
 		select {
 		case <-stop:
 			return
-		case <-time.After(clickDelay(targetCps)):
+		case <-time.After(clickDelay(cfg, targetCps)):
 		}
 	}
 }
@@ -183,8 +194,11 @@ func nextPhaseCps(min, max, avoid float64) float64 {
 	return v
 }
 
-func clickDelay(targetCps float64) time.Duration {
+func clickDelay(cfg engineConfig, targetCps float64) time.Duration {
 	ideal := 1000 / clampFloat(targetCps, 0.1, 1e6)
+	if cfg.rocket {
+		return time.Duration(clampFloat(ideal, 2, delayMaxMillis)) * time.Millisecond
+	}
 	jitter := 1 + (rand.Float64()*2*jitterFraction - jitterFraction)
 	ms := clampFloat(ideal*jitter, delayMinMillis, delayMaxMillis)
 	return time.Duration(ms) * time.Millisecond

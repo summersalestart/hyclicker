@@ -39,7 +39,7 @@ func (a *App) Startup(ctx context.Context) {
 	a.engine.OnStateChange(func(running bool) {
 		a.Emit("clicker-state", running)
 	})
-	a.engine.SetConfig(cfg.MinCps, cfg.MaxCps, normalizeButtonE(cfg.Button))
+	a.engine.SetConfig(cfg.MinCps, cfg.MaxCps, normalizeButtonE(cfg.Button), cfg.Rocket)
 
 	a.hk = NewHotkeyManager(func() { a.Emit("request-toggle", nil) })
 	a.bindHotkeyOrFallback(cfg)
@@ -86,12 +86,23 @@ func (a *App) Configure(minCps, maxCps float64, button string) error {
 	cfg := a.cfg
 	a.mu.Unlock()
 
-	a.engine.SetConfig(cfg.MinCps, cfg.MaxCps, normalizeButtonE(cfg.Button))
+	a.engine.SetConfig(cfg.MinCps, cfg.MaxCps, normalizeButtonE(cfg.Button), cfg.Rocket)
 	writeConfig(appConfigPath(), cfg)
 	return nil
 }
 
 func (a *App) IsRunning() bool { return a.engine.Running() }
+
+func (a *App) SetRocket(on bool) bool {
+	a.mu.Lock()
+	a.cfg.Rocket = on
+	cfg := a.cfg
+	a.mu.Unlock()
+	a.engine.SetConfig(cfg.MinCps, cfg.MaxCps, normalizeButtonE(cfg.Button), cfg.Rocket)
+	writeConfig(appConfigPath(), cfg)
+	a.Emit("rocket-state", on)
+	return on
+}
 
 func (a *App) Toggle() {
 	if a.engine.Running() {

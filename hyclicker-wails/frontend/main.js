@@ -1,7 +1,7 @@
 const $ = (id) => document.getElementById(id);
 const cps1 = $("cps1"), cps2 = $("cps2");
 const keybindBtn = $("keybindBtn"), startBtn = $("startBtn");
-const toast = $("toast"), mouseBtn = $("mouseBtn");
+const toast = $("toast"), mouseBtn = $("mouseBtn"), rocketBtn = $("rocketBtn");
 const updateBar = $("updateBar"), updateBtn = $("updateBtn"), updateText = $("updateText");
 
 const app = window.go.main.App;
@@ -28,6 +28,7 @@ async function restore() {
     if (cfg.max_cps) cps2.value = cfg.max_cps;
     if (cfg.button) mouseBtn.textContent = cfg.button;
     if (cfg.hotkey_name) keybindBtn.textContent = cfg.hotkey_name;
+    rocketBtn.classList.toggle("on", !!cfg.rocket);
   } catch {}
 }
 restore();
@@ -68,6 +69,10 @@ window.runtime.EventsOn("update-available", (v) => {
   updateText.textContent = `Update available (v${v})`;
   updateBtn.textContent = "Get it";
   updateBar.hidden = false;
+});
+window.runtime.EventsOn("rocket-state", (v) => rocketBtn.classList.toggle("on", !!v));
+rocketBtn.addEventListener("click", () => {
+  app.SetRocket(!rocketBtn.classList.contains("on")).then((v) => rocketBtn.classList.toggle("on", !!v));
 });
 window.runtime.EventsOn("hotkey-changed", (name) => { keybindBtn.textContent = name; showToast(`${name} was free; bound it instead`); });
 

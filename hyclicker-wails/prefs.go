@@ -17,6 +17,7 @@ type Config struct {
 	HotkeyVK   uint    `json:"hotkey_vk"`
 	HotkeyMod  uint    `json:"hotkey_mod"`
 	HotkeyName string  `json:"hotkey_name"`
+	Rocket     bool    `json:"rocket"`
 }
 
 const maxAllowedCPS = 50.0
