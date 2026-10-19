@@ -84,7 +84,7 @@ main { padding: 14px 16px 0 16px; text-align: center; }
 footer { position: absolute; bottom: 12px; left: 0; right: 0; display: flex;
   justify-content: space-between; align-items: center; padding: 0 14px;
   pointer-events: none; }
-.pills { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 12px; }
+.mouse-pill.rocket { margin-top: 12px; width: 84px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .github {
   width: 38px; height: 38px; border-radius: 50%; background: #000; border: none;
   cursor: pointer; display: flex; align-items: center; justify-content: center;
