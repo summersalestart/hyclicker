@@ -101,5 +101,6 @@ footer { position: absolute; bottom: 12px; left: 0; right: 0; display: flex;
 }
 .mouse-pill:hover { transform: translateY(-1px) scale(1.06); box-shadow: 0 4px 12px rgba(0,0,0,.4); }
 .mouse-pill:active { transform: scale(.95); box-shadow: none; }
-.mouse-pill.rocket { width: 84px; }
-.mouse-pill.rocket.on { background: var(--rocket); color: #102410; font-weight: 600; }
+.mouse-pill.rocket { width: 84px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+.mouse-pill.rocket svg { width: 15px; height: 15px; flex: none; }
+.mouse-pill.rocket.on { background: var(--rocket); color: #102410; }
