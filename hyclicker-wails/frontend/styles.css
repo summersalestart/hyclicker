@@ -10,7 +10,7 @@
   --red: #e34f4f;
   --red-hover: #f06c6c;
   --divider: #303030;
---rocket: #66d97a;
+--rocket: #00bf63;
   --green: #00bf63;
   --green-hover: #02d66f;
   --green-pressed: #00a855;
@@ -104,4 +104,4 @@ footer { position: absolute; bottom: 12px; left: 0; right: 0; display: flex;
 .mouse-pill:active { transform: scale(.95); box-shadow: none; }
 .mouse-pill.rocket { width: 84px; display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
 .mouse-pill.rocket svg { width: 15px; height: 15px; flex: none; }
-.mouse-pill.rocket.on { background: var(--rocket); color: #102410; }
+.mouse-pill.rocket.on { background: var(--rocket); color: #fff; }
